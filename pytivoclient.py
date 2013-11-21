@@ -1,18 +1,19 @@
 import re
+import datetime
 import xml.etree.ElementTree
 import requests
 
 
-_NAMESPACES = {
+NAMESPACES = {
     't': 'http://www.tivo.com/developer/calypso-protocol-1.6/'
     }
 
 
 def xml_iterfind(element, match):
-    return element.iterfind(match, namespaces=_NAMESPACES)
+    return element.iterfind(match, namespaces=NAMESPACES)
 
 def xml_findall(element, match):
-    return element.findall(match, namespaces=_NAMESPACES)
+    return element.findall(match, namespaces=NAMESPACES)
 
 def xml_bare_tag(element):
     return re.sub(r'^{[^}]+}', '', element.tag)
@@ -25,10 +26,13 @@ def camel_to_underscore(identifier):
             + re.sub(r'[A-Z]', lambda m: '_' + m.group().lower(), identifier[1:]))
 
 def parse_item(item_element):
-    item = Item()
+    data = {}
     for element in xml_iterfind(item_element, 't:Details/'):
         attr = camel_to_underscore(xml_bare_tag(element))
-        setattr(item, attr, element.text)
+        data[attr] = element.text
+    item = TYPE_MAP[data['content_type']]()
+    for attr, value in data.items():
+        setattr(item, attr, value)
     return item
 
 
@@ -74,6 +78,10 @@ class Folder(Item):
         self.last_capture_date = None
         self.unique_id = None
 
+    def __repr__(self):
+        return "<Folder: %s (%s) ID=%s>" % (self.title, self.total_items,
+                                            self.unique_id)
+
 
 class Video(Item):
 
@@ -90,6 +98,14 @@ class Video(Item):
         self.series_id = None
         self.byte_offset = None
 
+    def __repr__(self):
+        date_seconds = int(self.capture_date, 16)
+        date_display = datetime.datetime.fromtimestamp(date_seconds).isoformat()
+        hours, minutes = divmod(int(round(float(self.duration)/60000)), 60)
+        duration_display = '%d:%02d' % (hours, minutes)
+        return "<Video: %s (%s / %s)>" % (self.title, date_display,
+                                         duration_display)
+
 
 class Link(object):
 
@@ -97,3 +113,9 @@ class Link(object):
         self.url = None
         self.content_type = None
         self.icon = None
+
+
+TYPE_MAP = {
+    'video/x-tivo-raw-tts': Video,
+    'x-tivo-container/folder': Folder,
+    }
