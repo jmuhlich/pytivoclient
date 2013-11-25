@@ -72,16 +72,19 @@ class Client(object):
         item_elements = xml_iterfind(xml_root, 't:Item')
         return map(parse_item, item_elements)
 
-    def download(self, video, filename=None):
+    def download_iter(self, video, chunk_size=8192):
         if not isinstance(video, Video):
             raise ValueError("can only download videos")
         url = video.links['content'].url
-        filename = '%s.tivo' % video.display_title
         r = self.get(url, stream=True)
-        with open(filename, 'wb') as file:
-            for chunk in r.iter_content(8192):
-                file.write(chunk)
+        return r.iter_content(chunk_size)
 
+    def download(self, video, filename=None):
+        if not filename:
+            filename = '%s.tivo' % video.display_title
+        with open(filename, 'wb') as f:
+            for chunk in self.download_iter(video):
+                f.write(chunk)
 
 
 class Item(object):
