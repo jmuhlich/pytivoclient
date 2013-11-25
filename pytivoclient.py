@@ -4,16 +4,16 @@ import xml.etree.ElementTree
 import requests
 
 
-NAMESPACES = {
+XML_NAMESPACES = {
     't': 'http://www.tivo.com/developer/calypso-protocol-1.6/'
     }
 
 
 def xml_iterfind(element, match):
-    return element.iterfind(match, namespaces=NAMESPACES)
+    return element.iterfind(match, namespaces=XML_NAMESPACES)
 
 def xml_findall(element, match):
-    return element.findall(match, namespaces=NAMESPACES)
+    return element.findall(match, namespaces=XML_NAMESPACES)
 
 def xml_bare_tag(element):
     return re.sub(r'^{[^}]+}', '', element.tag)
