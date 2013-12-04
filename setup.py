@@ -1,11 +1,11 @@
-from distutils.core import setup
+from setuptools import setup, find_packages
 
 setup(
     name='pytivoclient',
     version='0.1',
-    py_modules=['pytivoclient'],
+    packages=find_packages(),
     license='BSD License',
-    description='List and download recordings from a TiVo device..',
+    description='List and download recordings from a TiVo device.',
     author='Jeremy Muhlich',
     author_email='jmuhlich@bitflood.org',
     classifiers=[
@@ -23,6 +23,9 @@ setup(
             'list = pytivoclient.main:List',
         ],
     },
-
-    zip_safe=False,
+    install_requires=[
+        "cliff >= 1.4",
+        "usersettings >= 1.0",
+        "requests >= 2.0",
+        ],
 )
