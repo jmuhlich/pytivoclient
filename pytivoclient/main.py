@@ -2,6 +2,7 @@ import sys
 from cliff.app import App
 from cliff.commandmanager import CommandManager
 from cliff.lister import Lister
+import cliff.interactive
 from usersettings import Settings
 from pytivoclient.client import Client
 
@@ -13,6 +14,7 @@ class ClientApp(App):
             description='pytivoclient app',
             version='0.1',
             command_manager=CommandManager('pytivoclient.app'),
+            interactive_app_factory=InteractiveApp,
             )
 
     def build_option_parser(self, description, version, argparse_kwargs=None):
@@ -55,6 +57,21 @@ class List(Lister):
         return (('Title', 'Type'),
                 ((i.title, i.content_type) for i in self.app.client.list())
                 )
+
+
+_commands_to_discard = ('cmdenvironment edit hi history l list pause r save '
+                        'shell show ed li load py run set shortcuts EOF eof q '
+                        'quit').split(' ')
+_discard_set = set('do_' + n for n in _commands_to_discard)
+
+class InteractiveApp(cliff.interactive.InteractiveApp):
+
+    # This isn't enough to disable the commands, it just hides them
+    # from the help listing!
+    def get_names(self):
+        names = cliff.interactive.InteractiveApp.get_names(self)
+        names = [n for n in names if n not in _discard_set]
+        return names
 
 
 def _find_parser_argument(parser, option):
