@@ -14,17 +14,24 @@ class ClientApp(App):
             version='0.1',
             command_manager=CommandManager('pytivoclient.app'),
             )
-        self.parser.add_argument(
+
+    def build_option_parser(self, description, version, argparse_kwargs=None):
+        parser = (super(ClientApp, self).
+                  build_option_parser(description, version, argparse_kwargs))
+        _remove_parser_argument(parser, '-q')
+        _find_parser_argument(parser, '-v').default = 0
+        parser.add_argument(
             '-n', '--hostname',
             action='store',
             help='TiVo hostname or IP address.',
             )
-        self.parser.add_argument(
+        parser.add_argument(
             '-m', '--media_access_key',
             action='store',
             help='Media Access Key.',
             metavar='KEY',
             )
+        return parser
 
     def initialize_app(self, argv):
         self.initialize_settings()
@@ -48,6 +55,17 @@ class List(Lister):
         return (('Title', 'Type'),
                 ((i.title, i.content_type) for i in self.app.client.list())
                 )
+
+
+def _find_parser_argument(parser, option):
+    gen = (a for a in parser._actions if option in a.option_strings)
+    return next(gen, None)
+
+def _remove_parser_argument(parser, option):
+    action = _find_parser_argument(parser, option)
+    for opt in action.option_strings:
+        parser._option_string_actions.pop(opt, None)
+    action.container._remove_action(action)
 
 
 def main(argv=sys.argv[1:]):
