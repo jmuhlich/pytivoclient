@@ -20,7 +20,9 @@ setup(
             'pytivoclient = pytivoclient.main:main'
         ],
         'pytivoclient.app': [
-            'list = pytivoclient.main:List',
+            'ls = pytivoclient.main:List',
+            'dir = pytivoclient.main:List',
+            'cd = pytivoclient.main:Chdir',
         ],
     },
     install_requires=[

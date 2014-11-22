@@ -95,6 +95,14 @@ class Item(object):
         self.title = None
         self.links = None
 
+    @property
+    def type(self):
+        return type(self).__name__
+
+    @property
+    def display_title(self):
+        return self.title
+
 
 class Folder(Item):
 
@@ -129,10 +137,10 @@ class Video(Item):
 
     @property
     def display_title(self):
-        try:
-            return '%s - %s' % (self.title, self.episode_title)
-        except AttributeError:
-            return self.title
+        ret = self.title
+        if self.episode_title is not None:
+            ret += ' - %s' % self.episode_title
+        return ret
 
     @property
     def display_capture_date(self):

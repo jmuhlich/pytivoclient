@@ -1,10 +1,12 @@
 import sys
 from cliff.app import App
 from cliff.commandmanager import CommandManager
+from cliff.command import Command
+from cliff.show import ShowOne
 from cliff.lister import Lister
 import cliff.interactive
 from usersettings import Settings
-from pytivoclient.client import Client
+from pytivoclient.client import Client, Folder
 
 
 class ClientApp(App):
@@ -38,6 +40,8 @@ class ClientApp(App):
         self.initialize_settings()
         self.client = Client(self.options.hostname,
                              self.options.media_access_key)
+        self.folder = None
+        self.update_listing()
 
     def initialize_settings(self):
         self.settings = Settings('pytivoclient')
@@ -49,13 +53,41 @@ class ClientApp(App):
                 optvalue = self.settings.get(optname)
                 setattr(self.options, optname, optvalue)
 
+    def update_listing(self):
+        self.listing = self.client.list(self.folder)
+
 
 class List(Lister):
 
-    def take_action(self, parsed_args):
-        return (('Title', 'Type'),
-                ((i.title, i.content_type) for i in self.app.client.list())
-                )
+    def take_action(self, args):
+        data = self.app.listing
+        return (
+            ('Title', 'Type'),
+            ((i.display_title, i.type) for i in data)
+            )
+
+
+class Chdir(Command):
+
+    def get_parser(self, prog_name):
+        parser = super(Chdir, self).get_parser(prog_name)
+        parser.add_argument('folder')
+        return parser
+
+    def take_action(self, args):
+        matches = [i for i in self.app.listing if i.title == args.folder]
+        if args.folder == '/':
+            folder = None
+        elif len(matches) == 0:
+            raise RuntimeError("no such folder")
+        elif len(matches) > 1:
+            raise RuntimeError("multiple matching folders")
+        elif not isinstance(matches[0], Folder):
+            raise RuntimeError("not a folder")
+        else:
+            folder = matches[0]
+        self.app.folder = folder
+        self.app.update_listing()
 
 
 def _find_parser_argument(parser, option):
